@@ -20,14 +20,52 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const spotsLeft = details.max_participants - details.participants.length;
 
+        // Create participants list HTML with delete icon
+        let participantsHTML = "<ul class='participants-list'>";
+        details.participants.forEach(email => {
+          participantsHTML += `
+            <li class="participant-row">
+              <span class="participant-email">${email}</span>
+              <button class="delete-participant" title="Remove participant" data-activity="${name}" data-email="${email}">
+                &#128465;
+              </button>
+            </li>
+          `;
+        });
+        participantsHTML += "</ul>";
+
         activityCard.innerHTML = `
           <h4>${name}</h4>
           <p>${details.description}</p>
           <p><strong>Schedule:</strong> ${details.schedule}</p>
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
+          <div>
+            <strong>Current Participants:</strong>
+            ${participantsHTML}
+          </div>
         `;
 
         activitiesList.appendChild(activityCard);
+      });
+      // Add event listeners for delete buttons
+      document.querySelectorAll('.delete-participant').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const activity = btn.getAttribute('data-activity');
+          const email = btn.getAttribute('data-email');
+          try {
+            const response = await fetch(`/activities/${encodeURIComponent(activity)}/unregister?email=${encodeURIComponent(email)}`, {
+              method: 'POST',
+            });
+            const result = await response.json();
+            if (response.ok) {
+              fetchActivities(); // Refresh list
+            } else {
+              alert(result.detail || 'Failed to remove participant');
+            }
+          } catch (error) {
+            alert('Error removing participant');
+          }
+        });
 
         // Add option to select dropdown
         const option = document.createElement("option");
